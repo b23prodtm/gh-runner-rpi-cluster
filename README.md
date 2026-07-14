@@ -173,3 +173,4 @@ This repository is meant to double as the reference layout for future balena Clo
 - Use the `balena-cloud-apps` package (`update_templates`, `balena_deploy`) rather than hand-writing per-arch Dockerfiles/compose files.
 - Keep the same multi-arch template structure: `common.env` + one `$(BALENA_ARCH).env` per target board, `Dockerfile.template` / `docker-compose.template` with `%%BALENA_ARCH%%` / `%%PLATFORM%%` / `%%PRIMARY_HUB%%` / `%%PRIMARY_TAG%%` placeholders, base images from the standard DockerHub registry rather than deprecated `balenalib/*` images.
 - Following this format keeps deployment consistent across projects and makes it straightforward to select self-hosted runners (as done here) for any future project that needs native-ARM builds instead of emulated GitHub-hosted ones.
+
