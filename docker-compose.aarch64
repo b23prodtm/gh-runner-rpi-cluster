@@ -35,7 +35,12 @@ services:
   #   - the commented-out backup-db.sh healthcheck — specific to acake2php's
   #     DB backup use case.
   balena-storage:
-    image: betothreeprod/balena-storage:latest
+    build:
+      context: ./gh-runner
+      args:
+        BALENA_ARCH: aarch64
+        PLATFORM: linux/arm64
+    restart: always
     privileged: true
     env_file:
       - common.env
