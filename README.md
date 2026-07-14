@@ -112,7 +112,7 @@ The compose template uses the `io.balena.features.balena-socket` label plus `pri
 
 ## Optional USB storage for `runner-work`
 
-Repeated `_work` I/O wears out SD cards. The compose template includes an optional `balena-storage` service, adapted from the one used in [b23prodtm/acake2php](https://github.com/b23prodtm/acake2php), that redirects the `runner-work` named volume onto a USB drive at `/mnt/external-drives`.
+Repeated `_work` I/O wears out SD cards. The compose template includes an optional `balena-storage` service, adapted from the one used in [b23prodtm/acake2php](https://github.com/b23prodtm/acake2php/tree/development) (`development` branch), that redirects the `runner-work` named volume onto a USB drive at `/mnt/external-drives`.
 
 ```yaml
 balena-storage:
@@ -130,11 +130,11 @@ balena-storage:
 - `gh-runner` depends on `balena-storage` via `depends_on`, so the mount attempt happens before the runner starts writing to `/data/_work`.
 
 Three things were intentionally dropped from the original acake2php block, since they don't apply to this project:
-- `build.x-bake` / `context: balena-storage` / `dockerfile: Dockerfile.%%BALENA_ARCH%%` — acake2php builds this image itself from a local `balena-storage/` source folder that isn't part of this repo. This service just pulls the published `betothreeprod/balena-storage:latest` image instead.
+- `build.x-bake` / `context: balena-storage` / `dockerfile: Dockerfile.%%BALENA_ARCH%%` — acake2php builds this image itself from its own [`balena-storage/`](https://github.com/b23prodtm/acake2php/tree/development/balena-storage) source folder on the `development` branch, which isn't part of this repo. This service just pulls the published `betothreeprod/balena-storage:latest` image instead.
 - `networks: [cake]` — an acake2php-specific network, not used here.
 - The commented-out `backup-db.sh` healthcheck — specific to acake2php's database backup use case.
 
-If you have the real `balena-storage/` source (Dockerfiles per arch) and want this project to build the image locally instead of pulling it, share that folder and the `build:`/`x-bake` block can be restored exactly.
+If you want this project to build the image locally instead of pulling it, pull in that `balena-storage/` folder from the `development` branch and the `build:`/`x-bake` block can be restored exactly.
 
 ## Building a Raspberry Pi cluster (4/5, 4GB+ RAM)
 
