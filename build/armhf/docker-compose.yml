@@ -10,7 +10,7 @@ services:
     privileged: true
     env_file:
       - common.env
-      - armv7hf.env
+      - armhf.env
     volumes:
       - runner-work:/mnt/external-drives
 
@@ -29,7 +29,7 @@ services:
       io.balena.arch: 'armv7hf'
     environment:
       - RUNNER_WORKDIR=/data/_work
-      - RUNNER_LABELS=self-hosted,balena,armv7hf
+      - RUNNER_LABELS=self-hosted,balena,armhf
     volumes:
       - runner-work:/data/_work
 

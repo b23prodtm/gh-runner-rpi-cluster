@@ -45,7 +45,7 @@ Each `$(BALENA_ARCH).env` file defines, at minimum:
 
 | Variable | Meaning |
 |---|---|
-| `BALENA_ARCH` | balena architecture slug (`aarch64`, `armhf`, `x86_64`) |
+| `BALENA_ARCH` | balena architecture slug used for image metadata (`aarch64`, `armv7hf`, `x86_64`) |
 | `PLATFORM` | Docker platform string for `--platform` / buildx (`linux/arm64`, ...) |
 | `PRIMARY_HUB` | Base image registry/repo — standard DockerHub `ubuntu`, **not** a `balenalib/*` image |
 | `PRIMARY_TAG` | Base image tag (`22.04`) |
@@ -53,7 +53,7 @@ Each `$(BALENA_ARCH).env` file defines, at minimum:
 
 `common.env` holds everything that doesn't vary by architecture (currently `RUNNER_VERSION`, `RUNNER_LABELS_BASE`).
 
-Templates use `%%TOKEN%%` placeholders (e.g. `%%BALENA_ARCH%%`, `%%PLATFORM%%`, `%%PRIMARY_HUB%%`) so the same two `.template` files produce a correct `Dockerfile`/`docker-compose.yml` for any target board.
+Templates use `%%TOKEN%%` placeholders (e.g. `%%ARCH_NAME%%`, `%%BALENA_ARCH%%`, `%%PLATFORM%%`, `%%PRIMARY_HUB%%`) so the same two `.template` files produce a correct `Dockerfile`/`docker-compose.yml` for any target board.
 
 The rendered output — `build/<arch>/docker-compose.yml` and `build/<arch>/gh-runner/Dockerfile` for each of the 3 archs — **is committed to git**. It is not gitignored. If you edit the `.template` files or an `<arch>.env` file, re-run the render step and commit the updated `build/` output alongside the templates so they stay in sync.
 
@@ -126,13 +126,13 @@ balena-storage:
   privileged: true
   env_file:
     - common.env
-    - %%BALENA_ARCH%%.env
+    - %%ARCH_NAME%%.env
   volumes:
     - runner-work:/mnt/external-drives
 ```
 
 - `privileged: true` is required for the service to detect and mount external media.
-- `env_file` pulls in `common.env` and the arch-specific `<arch>.env`, so `scripts/update_templates.sh` now copies both files into each `build/<arch>/` directory next to the rendered `docker-compose.yml`.
+- `env_file` pulls in `common.env` and the rendered build directory's matching `<arch>.env`, so `scripts/update_templates.sh` now copies both files into each `build/<arch>/` directory next to the rendered `docker-compose.yml`.
 - `gh-runner` depends on `balena-storage`, so the mount attempt happens before the runner starts writing to `/data/_work`.
 
 Three things from the original acake2php service are still intentionally omitted here because they do not apply to this repository:

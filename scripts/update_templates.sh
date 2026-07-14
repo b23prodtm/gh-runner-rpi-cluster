@@ -28,6 +28,7 @@ render_arch() {
   local arch_env="$1"
   local arch
   arch="$(basename "$arch_env" .env)"
+  local arch_name="$arch"
   local build_dir="${ROOT_DIR}/build/${arch}"
 
   mkdir -p "${build_dir}/gh-runner"
@@ -38,6 +39,7 @@ render_arch() {
   source "$COMMON_ENV"
   # shellcheck disable=SC1090
   source "$arch_env"
+  ARCH_NAME="$arch_name"
   set +a
 
   render() {

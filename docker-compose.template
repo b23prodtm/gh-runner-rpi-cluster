@@ -10,7 +10,7 @@ services:
     privileged: true
     env_file:
       - common.env
-      - %%BALENA_ARCH%%.env
+      - %%ARCH_NAME%%.env
     volumes:
       - runner-work:/mnt/external-drives
 
@@ -29,7 +29,7 @@ services:
       io.balena.arch: '%%BALENA_ARCH%%'
     environment:
       - RUNNER_WORKDIR=/data/_work
-      - RUNNER_LABELS=%%RUNNER_LABELS_BASE%%,%%BALENA_ARCH%%
+      - RUNNER_LABELS=%%RUNNER_LABELS_BASE%%,%%ARCH_NAME%%
     volumes:
       - runner-work:/data/_work
 
