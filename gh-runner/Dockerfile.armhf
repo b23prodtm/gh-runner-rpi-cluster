@@ -1,0 +1,37 @@
+# gh-runner/Dockerfile.armhf
+# Rendered into gh-runner/Dockerfile by update_templates (balena-cloud-apps),
+# substituting %%TOKEN%% placeholders from common.env + $(BALENA_ARCH).env.
+#
+# Uses the standard DockerHub `ubuntu` image (multi-arch manifest) instead of
+# the deprecated balenalib/raspberrypi4-* images.
+
+FROM --platform=linux/arm/v7 ubuntu:%%PRIMARY_TAG%%
+
+ARG RUNNER_VERSION=%%RUNNER_VERSION%%
+ARG RUNNER_ARCH=%%RUNNER_ARCH%%
+ARG BALENA_ARCH=armhf
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl jq git sudo libicu-dev ca-certificates docker.io \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m runner && usermod -aG docker runner
+WORKDIR /home/runner
+
+# Runner tarball naming follows GitHub's own arch suffixes (arm64 / arm / x64),
+# supplied per architecture via RUNNER_ARCH in $(BALENA_ARCH).env.
+RUN curl -o actions-runner.tar.gz -L \
+        "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-linux-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
+    && tar xzf actions-runner.tar.gz && rm actions-runner.tar.gz \
+    && ./bin/installdependencies.sh \
+    && chown -R runner:runner /home/runner
+
+LABEL io.balena.arch="armhf"
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+USER runner
+ENTRYPOINT ["/entrypoint.sh"]

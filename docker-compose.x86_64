@@ -1,0 +1,52 @@
+# docker-compose.template
+# Rendered into docker-compose.yml by update_templates (balena-cloud-apps).
+
+version: '2.1'
+
+services:
+  gh-runner:
+    build:
+      context: ./gh-runner
+      args:
+        BALENA_ARCH: x86_64
+        PLATFORM: linux/amd64
+    restart: always
+    privileged: true
+    labels:
+      io.balena.features.balena-socket: '1'
+      io.balena.arch: 'x86_64'
+    environment:
+      - RUNNER_WORKDIR=/data/_work
+      - RUNNER_LABELS=%%RUNNER_LABELS_BASE%%,x86_64
+    volumes:
+      - runner-work:/data/_work
+    depends_on:
+      - balena-storage
+
+  # Optional USB storage: redirects the runner-work volume onto a USB drive
+  # instead of the SD card, to avoid wearing it out with repeated CI I/O.
+  # Adapted from the balena-storage service in b23prodtm/acake2php.
+  #
+  # Dropped from the original acake2php block (not applicable here):
+  #   - build.x-bake / context / dockerfile: that project builds this image
+  #     itself from a local balena-storage/ source folder this repo doesn't
+  #     have. This service just pulls the published image instead.
+  #   - networks: [cake] — acake2php-specific network, not used by this project.
+  #   - the commented-out backup-db.sh healthcheck — specific to acake2php's
+  #     DB backup use case.
+  balena-storage:
+    build:
+      context: ./gh-runner
+      args:
+        BALENA_ARCH: x86_64
+        PLATFORM: linux/amd64
+    restart: always
+    privileged: true
+    env_file:
+      - common.env
+      - x86_64.env
+    volumes:
+      - runner-work:/mnt/external-drives
+
+volumes:
+  runner-work:
