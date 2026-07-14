@@ -1,0 +1,25 @@
+# docker-compose.template
+# Rendered into docker-compose.yml by update_templates (balena-cloud-apps).
+
+version: '2.1'
+
+services:
+  gh-runner:
+    build:
+      context: ./gh-runner
+      args:
+        BALENA_ARCH: x86_64
+        PLATFORM: linux/amd64
+    restart: always
+    privileged: true
+    labels:
+      io.balena.features.balena-socket: '1'
+      io.balena.arch: 'x86_64'
+    environment:
+      - RUNNER_WORKDIR=/data/_work
+      - RUNNER_LABELS=self-hosted,balena,x86_64
+    volumes:
+      - runner-work:/data/_work
+
+volumes:
+  runner-work:
