@@ -12,9 +12,8 @@
 # Usage: ./scripts/update_templates.sh <project_root>
 #   e.g. ./scripts/update_templates.sh .
 #
-# Output layout: each arch gets its own self-contained build context under
-# build/<arch>/ (Dockerfile + entrypoint.sh + docker-compose.yml), so the 3
-# archs never overwrite each other's rendered files.
+# Output layout: rendered files are written at the project root as
+# docker-compose.<arch> and gh-runner/Dockerfile.<arch>.
 
 set -euo pipefail
 
@@ -28,12 +27,12 @@ render_arch() {
   local arch_env="$1"
   local arch
   arch="$(basename "$arch_env" .env)"
-  local build_dir="${ROOT_DIR}/build/${arch}"
-
-  mkdir -p "${build_dir}/gh-runner"
+  local compose_output="${ROOT_DIR}/docker-compose.${arch}"
+  local dockerfile_output="${ROOT_DIR}/gh-runner/Dockerfile.${arch}"
 
   # Fresh env per arch: common.env first, then this arch's overrides.
   set -a
+  OUTPUT_ARCH="$arch"
   # shellcheck disable=SC1090
   source "$COMMON_ENV"
   # shellcheck disable=SC1090
@@ -52,11 +51,10 @@ render_arch() {
     echo "$content" > "$output"
   }
 
-  render "${ROOT_DIR}/docker-compose.yml.template" "${build_dir}/docker-compose.yml"
-  render "${ROOT_DIR}/gh-runner/Dockerfile.template" "${build_dir}/gh-runner/Dockerfile"
-  cp "${ROOT_DIR}/gh-runner/entrypoint.sh" "${build_dir}/gh-runner/entrypoint.sh"
+  render "${ROOT_DIR}/docker-compose.yml.template" "${compose_output}"
+  render "${ROOT_DIR}/gh-runner/Dockerfile.template" "${dockerfile_output}"
 
-  echo "Rendered: build/${arch}/ (arch=${arch})"
+  echo "Rendered: docker-compose.${arch}, gh-runner/Dockerfile.${arch} (arch=${arch})"
 }
 
 # Process every $(BALENA_ARCH).env found next to common.env, in sequence.

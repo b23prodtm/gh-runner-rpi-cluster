@@ -13,24 +13,20 @@ Each device registers itself as an **ephemeral** runner: it pulls a fresh regist
 This project does not commit a static `Dockerfile` or `docker-compose.yml`. Instead it ships **templates** rendered per architecture:
 
 ```
-common.env               # variables shared by every architecture
-aarch64.env               # RPi 4/5, 64-bit balenaOS (primary target)
-armv7hf.env                # RPi 2/3, 32-bit balenaOS
-rpi.env                     # RPi Zero/1, armv6hf (template completeness only)
-docker-compose.yml.template  # -> rendered per arch
+common.env                  # variables shared by every architecture
+aarch64.env                 # 64-bit ARM target settings
+armhf.env                   # 32-bit ARM target settings
+x86_64.env                  # AMD64 target settings
+docker-compose.yml.template # -> rendered per arch
+docker-compose.aarch64      # rendered output
+docker-compose.armhf        # rendered output
+docker-compose.x86_64       # rendered output
 gh-runner/
   Dockerfile.template     # -> rendered per arch
+  Dockerfile.aarch64      # rendered output
+  Dockerfile.armhf        # rendered output
+  Dockerfile.x86_64       # rendered output
   entrypoint.sh
-build/                    # rendered output, one self-contained dir per arch
-  aarch64/
-    docker-compose.yml
-    gh-runner/{Dockerfile, entrypoint.sh}
-  armv7hf/
-    docker-compose.yml
-    gh-runner/{Dockerfile, entrypoint.sh}
-  rpi/
-    docker-compose.yml
-    gh-runner/{Dockerfile, entrypoint.sh}
 scripts/
   update_templates.sh     # fallback renderer if balena-cloud-apps isn't installed
 ```
@@ -49,11 +45,11 @@ Each `$(BALENA_ARCH).env` file defines, at minimum:
 
 Templates use `%%TOKEN%%` placeholders (e.g. `%%BALENA_ARCH%%`, `%%PLATFORM%%`, `%%PRIMARY_HUB%%`) so the same two `.template` files produce a correct `Dockerfile`/`docker-compose.yml` for any target board.
 
-The rendered output — `build/<arch>/docker-compose.yml` and `build/<arch>/gh-runner/Dockerfile` for each of the 3 archs — **is committed to git**. It is not gitignored. If you edit the `.template` files or an `<arch>.env` file, re-run the render step and commit the updated `build/` output alongside the templates so they stay in sync.
+The rendered output — `docker-compose.<arch>` and `gh-runner/Dockerfile.<arch>` for each arch — **is committed to git**. It is not gitignored. If you edit the `.template` files or an `<arch>.env` file, re-run the render step and commit the updated rendered output alongside the templates so they stay in sync.
 
 ### Rendering the templates
 
-`update_templates` only takes a `project_root` — no target argument. Every `<arch>.env` file found next to `common.env` is processed **in sequence, in the same run** (currently `aarch64`, `armv7hf`, `rpi`). `balena_deploy` keeps its `<project_root> [options] [target]` signature — call it without a target to deploy all rendered archs, or with one (e.g. `balena_deploy . aarch64`) to push a single arch.
+`update_templates` only takes a `project_root` — no target argument. Every `<arch>.env` file found next to `common.env` is processed **in sequence, in the same run** (currently `aarch64`, `armhf`, `x86_64`). `balena_deploy` keeps its `<project_root> [options] [target]` signature — call it without a target to deploy all rendered archs, or with one (e.g. `balena_deploy . aarch64`) to push a single arch.
 
 If you have the `balena-cloud-apps` package installed, use its own tooling as the source of truth (binaries typically at `/opt/local/bin/`):
 
@@ -62,7 +58,7 @@ update_templates .
 balena_deploy .
 ```
 
-If it isn't on your PATH, `scripts/update_templates.sh` is a plain-bash fallback with the same contract and invocation shape (project_root only, all archs rendered in one pass, output under `build/<arch>/`):
+If it isn't on your PATH, `scripts/update_templates.sh` is a plain-bash fallback with the same contract and invocation shape (project_root only, all archs rendered in one pass, output as `docker-compose.<arch>` and `gh-runner/Dockerfile.<arch>`):
 
 ```bash
 ./scripts/update_templates.sh .
