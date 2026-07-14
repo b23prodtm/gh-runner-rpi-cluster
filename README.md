@@ -45,7 +45,7 @@ Each `$(BALENA_ARCH).env` file defines, at minimum:
 
 | Variable | Meaning |
 |---|---|
-| `BALENA_ARCH` | balena architecture slug used for image metadata (`aarch64`, `armv7hf`, `x86_64`) |
+| `BALENA_ARCH` | balena architecture slug (`aarch64`, `armhf`, `x86_64`) |
 | `PLATFORM` | Docker platform string for `--platform` / buildx (`linux/arm64`, ...) |
 | `PRIMARY_HUB` | Base image registry/repo — standard DockerHub `ubuntu`, **not** a `balenalib/*` image |
 | `PRIMARY_TAG` | Base image tag (`22.04`) |
@@ -118,7 +118,7 @@ The compose template uses the `io.balena.features.balena-socket` label plus `pri
 
 ## Optional USB storage for `runner-work`
 
-Repeated `_work` I/O wears out SD cards. The compose template now includes a `balena-storage` sidecar, adapted from the one used in [b23prodtm/acake2php](https://github.com/b23prodtm/acake2php), that redirects the `runner-work` named volume onto a USB drive mounted under `/mnt/external-drives`.
+Repeated `_work` I/O wears out SD cards. The compose template includes an optional `balena-storage` service, adapted from the one used in [b23prodtm/acake2php](https://github.com/b23prodtm/acake2php), that redirects the `runner-work` named volume onto a USB drive at `/mnt/external-drives`.
 
 ```yaml
 balena-storage:
@@ -126,19 +126,21 @@ balena-storage:
   privileged: true
   env_file:
     - common.env
-    - %%ARCH_NAME%%.env
+    - %%BALENA_ARCH%%.env
   volumes:
     - runner-work:/mnt/external-drives
 ```
 
 - `privileged: true` is required for the service to detect and mount external media.
-- `env_file` pulls in `common.env` and the rendered build directory's matching `<arch>.env`, so `scripts/update_templates.sh` now copies both files into each `build/<arch>/` directory next to the rendered `docker-compose.yml`.
-- `gh-runner` depends on `balena-storage`, so the mount attempt happens before the runner starts writing to `/data/_work`.
+- `env_file` pulls in `common.env` + the arch's own `<arch>.env` — the renderer copies both into each `build/<arch>/` directory alongside `docker-compose.yml` so the relative paths resolve.
+- `gh-runner` depends on `balena-storage` via `depends_on`, so the mount attempt happens before the runner starts writing to `/data/_work`.
 
-Three things from the original acake2php service are still intentionally omitted here because they do not apply to this repository:
-- `build.x-bake` / `context: balena-storage` / `dockerfile: Dockerfile.%%BALENA_ARCH%%`, because this repository currently pulls the published `betothreeprod/balena-storage:latest` image instead of building it locally.
-- `networks: [cake]`, because that network is specific to acake2php.
-- The commented-out `backup-db.sh` healthcheck, because it is tied to acake2php's database backup workflow.
+Three things were intentionally dropped from the original acake2php block, since they don't apply to this project:
+- `build.x-bake` / `context: balena-storage` / `dockerfile: Dockerfile.%%BALENA_ARCH%%` — acake2php builds this image itself from a local `balena-storage/` source folder that isn't part of this repo. This service just pulls the published `betothreeprod/balena-storage:latest` image instead.
+- `networks: [cake]` — an acake2php-specific network, not used here.
+- The commented-out `backup-db.sh` healthcheck — specific to acake2php's database backup use case.
+
+If you have the real `balena-storage/` source (Dockerfiles per arch) and want this project to build the image locally instead of pulling it, share that folder and the `build:`/`x-bake` block can be restored exactly.
 
 ## Building a Raspberry Pi cluster (4/5, 4GB+ RAM)
 
