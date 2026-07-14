@@ -7,17 +7,18 @@ services:
   gh-runner:
     build:
       context: ./gh-runner
+      dockerfile: Dockerfile.x86_64
       args:
-        BALENA_ARCH: armv7hf
-        PLATFORM: linux/arm/v7
+        BALENA_ARCH: x86_64
+        PLATFORM: linux/amd64
     restart: always
     privileged: true
     labels:
       io.balena.features.balena-socket: '1'
-      io.balena.arch: 'armv7hf'
+      io.balena.arch: 'x86_64'
     environment:
       - RUNNER_WORKDIR=/data/_work
-      - RUNNER_LABELS=self-hosted,balena,armv7hf
+      - RUNNER_LABELS=self-hosted,balena,x86_64
     volumes:
       - runner-work:/data/_work
 

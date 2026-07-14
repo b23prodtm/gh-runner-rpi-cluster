@@ -5,11 +5,11 @@
 # Uses the standard DockerHub `ubuntu` image (multi-arch manifest) instead of
 # the deprecated balenalib/raspberrypi4-* images.
 
-FROM --platform=linux/arm/v6 ubuntu:22.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 ARG RUNNER_VERSION=2.319.1
-ARG RUNNER_ARCH=arm
-ARG BALENA_ARCH=rpi
+ARG RUNNER_ARCH=x64
+ARG BALENA_ARCH=x86_64
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -28,7 +28,7 @@ RUN curl -o actions-runner.tar.gz -L \
     && ./bin/installdependencies.sh \
     && chown -R runner:runner /home/runner
 
-LABEL io.balena.arch="rpi"
+LABEL io.balena.arch="x86_64"
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
