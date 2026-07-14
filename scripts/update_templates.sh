@@ -52,9 +52,14 @@ render_arch() {
     echo "$content" > "$output"
   }
 
-  render "${ROOT_DIR}/docker-compose.yml.template" "${build_dir}/docker-compose.yml"
+  render "${ROOT_DIR}/docker-compose.template" "${build_dir}/docker-compose.yml"
   render "${ROOT_DIR}/gh-runner/Dockerfile.template" "${build_dir}/gh-runner/Dockerfile"
   cp "${ROOT_DIR}/gh-runner/entrypoint.sh" "${build_dir}/gh-runner/entrypoint.sh"
+
+  # balena-storage's env_file entries (common.env, <arch>.env) are resolved
+  # relative to the rendered docker-compose.yml, so copy both alongside it.
+  cp "$COMMON_ENV" "${build_dir}/common.env"
+  cp "$arch_env" "${build_dir}/${arch}.env"
 
   echo "Rendered: build/${arch}/ (arch=${arch})"
 }
