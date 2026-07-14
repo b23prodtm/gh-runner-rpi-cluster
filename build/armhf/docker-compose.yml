@@ -4,12 +4,24 @@
 version: '2.1'
 
 services:
+  balena-storage:
+    image: betothreeprod/balena-storage:latest
+    restart: always
+    privileged: true
+    env_file:
+      - common.env
+      - armv7hf.env
+    volumes:
+      - runner-work:/mnt/external-drives
+
   gh-runner:
     build:
       context: ./gh-runner
       args:
         BALENA_ARCH: armv7hf
         PLATFORM: linux/arm/v7
+    depends_on:
+      - balena-storage
     restart: always
     privileged: true
     labels:

@@ -13,23 +13,29 @@ Each device registers itself as an **ephemeral** runner: it pulls a fresh regist
 This project does not commit a static `Dockerfile` or `docker-compose.yml`. Instead it ships **templates** rendered per architecture:
 
 ```
-common.env               # variables shared by every architecture
-aarch64.env               # RPi 4/5, 64-bit balenaOS (primary target)
-armv7hf.env                # RPi 2/3, 32-bit balenaOS
-rpi.env                     # RPi Zero/1, armv6hf (template completeness only)
-docker-compose.yml.template  # -> rendered per arch
+common.env                 # variables shared by every architecture
+aarch64.env                # RPi 4/5, 64-bit balenaOS (primary target)
+armhf.env                  # RPi 2/3, 32-bit balenaOS
+x86_64.env                 # x86_64 (e.g. Intel NUC), optional dev/extra capacity
+docker-compose.template    # -> rendered per arch
 gh-runner/
   Dockerfile.template     # -> rendered per arch
   entrypoint.sh
 build/                    # rendered output, one self-contained dir per arch
   aarch64/
     docker-compose.yml
+    common.env
+    aarch64.env
     gh-runner/{Dockerfile, entrypoint.sh}
-  armv7hf/
+  armhf/
     docker-compose.yml
+    common.env
+    armhf.env
     gh-runner/{Dockerfile, entrypoint.sh}
-  rpi/
+  x86_64/
     docker-compose.yml
+    common.env
+    x86_64.env
     gh-runner/{Dockerfile, entrypoint.sh}
 scripts/
   update_templates.sh     # fallback renderer if balena-cloud-apps isn't installed
@@ -39,7 +45,7 @@ Each `$(BALENA_ARCH).env` file defines, at minimum:
 
 | Variable | Meaning |
 |---|---|
-| `BALENA_ARCH` | balena architecture slug (`aarch64`, `armv7hf`, ...) |
+| `BALENA_ARCH` | balena architecture slug (`aarch64`, `armhf`, `x86_64`) |
 | `PLATFORM` | Docker platform string for `--platform` / buildx (`linux/arm64`, ...) |
 | `PRIMARY_HUB` | Base image registry/repo — standard DockerHub `ubuntu`, **not** a `balenalib/*` image |
 | `PRIMARY_TAG` | Base image tag (`22.04`) |
@@ -53,7 +59,7 @@ The rendered output — `build/<arch>/docker-compose.yml` and `build/<arch>/gh-r
 
 ### Rendering the templates
 
-`update_templates` only takes a `project_root` — no target argument. Every `<arch>.env` file found next to `common.env` is processed **in sequence, in the same run** (currently `aarch64`, `armv7hf`, `rpi`). `balena_deploy` keeps its `<project_root> [options] [target]` signature — call it without a target to deploy all rendered archs, or with one (e.g. `balena_deploy . aarch64`) to push a single arch.
+`update_templates` only takes a `project_root` — no target argument. Every `<arch>.env` file found next to `common.env` is processed **in sequence, in the same run** (currently `aarch64`, `armhf`, `x86_64`). `balena_deploy` keeps its `<project_root> [options] [target]` signature — call it without a target to deploy all rendered archs, or with one (e.g. `balena_deploy . aarch64`) to push a single arch.
 
 If you have the `balena-cloud-apps` package installed, use its own tooling as the source of truth (binaries typically at `/opt/local/bin/`):
 
@@ -109,6 +115,30 @@ Earlier iterations of this project used `balenalib/raspberrypi4-64-ubuntu`. That
 ## Notes on Docker-in-Docker
 
 The compose template uses the `io.balena.features.balena-socket` label plus `privileged: true` to expose the host's balenaEngine socket inside the container, rather than running full Docker-in-Docker — lighter on Raspberry Pi hardware and the standard balena pattern for build-capable containers.
+
+## Optional USB storage for `runner-work`
+
+Repeated `_work` I/O wears out SD cards. The compose template now includes a `balena-storage` sidecar, adapted from the one used in [b23prodtm/acake2php](https://github.com/b23prodtm/acake2php), that redirects the `runner-work` named volume onto a USB drive mounted under `/mnt/external-drives`.
+
+```yaml
+balena-storage:
+  image: betothreeprod/balena-storage:latest
+  privileged: true
+  env_file:
+    - common.env
+    - %%BALENA_ARCH%%.env
+  volumes:
+    - runner-work:/mnt/external-drives
+```
+
+- `privileged: true` is required for the service to detect and mount external media.
+- `env_file` pulls in `common.env` and the arch-specific `<arch>.env`, so `scripts/update_templates.sh` now copies both files into each `build/<arch>/` directory next to the rendered `docker-compose.yml`.
+- `gh-runner` depends on `balena-storage`, so the mount attempt happens before the runner starts writing to `/data/_work`.
+
+Three things from the original acake2php service are still intentionally omitted here because they do not apply to this repository:
+- `build.x-bake` / `context: balena-storage` / `dockerfile: Dockerfile.%%BALENA_ARCH%%`, because this repository currently pulls the published `betothreeprod/balena-storage:latest` image instead of building it locally.
+- `networks: [cake]`, because that network is specific to acake2php.
+- The commented-out `backup-db.sh` healthcheck, because it is tied to acake2php's database backup workflow.
 
 ## Building a Raspberry Pi cluster (4/5, 4GB+ RAM)
 

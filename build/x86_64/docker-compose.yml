@@ -4,12 +4,24 @@
 version: '2.1'
 
 services:
+  balena-storage:
+    image: betothreeprod/balena-storage:latest
+    restart: always
+    privileged: true
+    env_file:
+      - common.env
+      - x86_64.env
+    volumes:
+      - runner-work:/mnt/external-drives
+
   gh-runner:
     build:
       context: ./gh-runner
       args:
         BALENA_ARCH: x86_64
         PLATFORM: linux/amd64
+    depends_on:
+      - balena-storage
     restart: always
     privileged: true
     labels:
