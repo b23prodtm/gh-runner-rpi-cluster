@@ -8,16 +8,16 @@ services:
     build:
       context: ./gh-runner
       args:
-        BALENA_ARCH: x86_64
-        PLATFORM: linux/amd64
+        BALENA_ARCH: aarch64
+        PLATFORM: linux/arm64
     restart: always
     privileged: true
     labels:
       io.balena.features.balena-socket: '1'
-      io.balena.arch: 'x86_64'
+      io.balena.arch: 'aarch64'
     environment:
       - RUNNER_WORKDIR=/data/_work
-      - RUNNER_LABELS=%%RUNNER_LABELS_BASE%%,x86_64
+      - RUNNER_LABELS=%%RUNNER_LABELS_BASE%%,aarch64
     volumes:
       - runner-work:/data/_work
     depends_on:
@@ -39,7 +39,7 @@ services:
     privileged: true
     env_file:
       - common.env
-      - x86_64.env
+      - aarch64.env
     volumes:
       - runner-work:/mnt/external-drives
 
