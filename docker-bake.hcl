@@ -13,8 +13,8 @@ variable "REGISTRY_IMAGE" {
   default = "bprtkop"
 }
 
-Variable "REGISTRY_HUB" {
-  Default = "gh-runner-rpi-cluster"
+variable "REGISTRY_HUB" {
+  default = "gh-runner-rpi-cluster"
 }
 
 variable "BAKE_TAG" {
